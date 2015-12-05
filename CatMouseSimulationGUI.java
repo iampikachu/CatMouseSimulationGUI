@@ -8,6 +8,15 @@ public class CatMouseSimulationGUI{
     int catRadius;
     double catAngle;
     double mouseAngle;
+    double millisecondsPerTimeStep;
+    int time = 0;
+    JLabel currentTimeLabel;
+
+    //started cat and mouse coordinates
+    Position cat_position;
+    Position mouse_position;
+    Cat cat;
+    Mouse mouse;
 
     public static void main(String [] args){
         if(args.length != 5){
@@ -18,11 +27,16 @@ public class CatMouseSimulationGUI{
         CatMouseSimulationGUI gui = new CatMouseSimulationGUI();
 
         gui.pixelPerMeter = Integer.parseInt(args[0]);
-        double millisecondsPerSimStep = Double.parseDouble(args[1]);
+        gui.millisecondsPerTimeStep = Double.parseDouble(args[1]);
         gui.catRadius = Integer.parseInt(args[2]);
         gui.catAngle = Double.parseDouble(args[3]);
         gui.mouseAngle = Double.parseDouble(args[4]);
 
+        gui.cat_position = new Position(gui.catRadius, gui.catAngle);
+        gui.mouse_position = new Position(1.0, gui.mouseAngle);
+        gui.cat = new Cat(gui.cat_position);
+        gui.mouse = new Mouse(gui.mouse_position);
+        
         gui.go();
     }
 
@@ -39,7 +53,7 @@ public class CatMouseSimulationGUI{
         JButton runButton = new JButton("run");
         JButton quitButton = new JButton("quit");
         JLabel timeLabel = new JLabel("Time: ");
-        JLabel currentTimeLabel = new JLabel("0");
+        currentTimeLabel = new JLabel(Integer.toString(time));
         
         //Add buttons to panel
         buttonPanel.add(resetButton);
@@ -48,6 +62,10 @@ public class CatMouseSimulationGUI{
         buttonPanel.add(quitButton);
         buttonPanel.add(timeLabel);
         buttonPanel.add(currentTimeLabel);
+
+        //add listeners for each button
+        quitButton.addActionListener(new quitListener());
+        stepButton.addActionListener(new stepListener());
 
         frame.getContentPane().add(BorderLayout.SOUTH, buttonPanel);
         frame.getContentPane().add(drawPanel);
@@ -61,6 +79,29 @@ public class CatMouseSimulationGUI{
         }catch(Exception ex){}    
         */
         //currentTimeLabel.setText("2");
+    }
+    
+    //Button classes
+    class resetListener implements ActionListener{
+        public void actionPerformed(ActionEvent event){
+            System.exit(0);
+        }
+    }
+    class stepListener implements ActionListener{
+        public void actionPerformed(ActionEvent event){
+            time++;
+            currentTimeLabel.setText(Integer.toString(time));
+        }
+    }
+    class runListener implements ActionListener{
+        public void actionPerformed(ActionEvent event){
+            System.exit(0);
+        }
+    }
+    class quitListener implements ActionListener{
+        public void actionPerformed(ActionEvent event){
+            System.exit(0);
+        }
     }
     
     class DrawPanel extends JPanel{
@@ -111,8 +152,9 @@ public class CatMouseSimulationGUI{
             g.fillOval(mouseDirectionCenterx, mouseDirectionCentery, mouseDirectionDiameter, mouseDirectionDiameter);
 
             //second ball (cat)
-            int arrowTip2x = (int)(middlex + catRadius * Math.cos(catAngle));
-            int arrowTip2y = (int)(middley - catRadius * Math.sin(catAngle));
+            //need to scale catRadius by multiplying by radius (radius * catRadius)
+            int arrowTip2x = (int)(middlex + radius * catRadius * Math.cos(catAngle));
+            int arrowTip2y = (int)(middley - radius * catRadius * Math.sin(catAngle));
             int catDiameter = radius/6;
             int catCenterx = arrowTip2x - (catDiameter)/2;
             int catCentery = arrowTip2y - (catDiameter)/2;
@@ -121,10 +163,22 @@ public class CatMouseSimulationGUI{
             g.drawOval(catCenterx, catCentery, catDiameter, catDiameter);
             g.setColor(Color.blue);
             g.fillOval(catCenterx, catCentery, catDiameter, catDiameter);
-            
+
+            //draw line between cat and mouse
+            g.setColor(Color.black);
+            g.drawLine(arrowTipx, arrowTipy, arrowTip2x - (int)(catDiameter/2 * Math.cos(catAngle)), arrowTip2y + (int)(catDiameter/2 * Math.sin(catAngle)));
+
             //direction indicator
-            int catDirectionTipx = (int)(middlex + radius * Math.cos(catAngle + .07));
-            int catDirectionTipy = (int)(middley - radius * Math.sin(catAngle + .07));
+            int catDirectionTipx;
+            int catDirectionTipy;
+            if(radius * catRadius == radius){
+                catDirectionTipx = (int)(middlex + radius * Math.cos(catAngle + .07));
+                catDirectionTipy = (int)(middley - radius * Math.sin(catAngle + .07));
+            }
+            else{
+                catDirectionTipx = arrowTip2x - (int)(catDiameter/2 * Math.cos(catAngle));
+                catDirectionTipy = arrowTip2y +  (int)(catDiameter/2 * Math.sin(catAngle));
+            }
             int catDirectionDiameter = radius/18;
             int catDirectionCenterx = catDirectionTipx - (catDirectionDiameter)/2;
             int catDirectionCentery = catDirectionTipy - (catDirectionDiameter)/2;
@@ -133,7 +187,6 @@ public class CatMouseSimulationGUI{
             g.drawOval(catDirectionCenterx, catDirectionCentery, catDirectionDiameter, catDirectionDiameter);
             g.setColor(Color.red);
             g.fillOval(catDirectionCenterx, catDirectionCentery, catDirectionDiameter, catDirectionDiameter);
-
         }
     }             
         
