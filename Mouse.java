@@ -18,6 +18,10 @@ public class Mouse {
     public void move ( ) {
 	    myPosition.update (0.0, 1.0);
     }
+
+    public void changePosition(Position change){
+        myPosition = change;
+    }
     
     private Position myPosition;
 }

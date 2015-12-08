@@ -11,12 +11,20 @@ public class CatMouseSimulationGUI{
     double millisecondsPerTimeStep;
     int time = 0;
     JLabel currentTimeLabel;
+    DrawPanel drawPanel;
 
     //started cat and mouse coordinates
     Position cat_position;
     Position mouse_position;
+
+    //save reset positions;
+    Position reset_cat;
+    Position reset_mouse; 
+
     Cat cat;
     Mouse mouse;
+    boolean eaten = false;
+    boolean done = true;
 
     public static void main(String [] args){
         if(args.length != 5){
@@ -36,7 +44,18 @@ public class CatMouseSimulationGUI{
         gui.mouse_position = new Position(1.0, gui.mouseAngle);
         gui.cat = new Cat(gui.cat_position);
         gui.mouse = new Mouse(gui.mouse_position);
-        
+
+        //for reset
+        gui.reset_cat = new Position(gui.cat_position);
+        gui.reset_mouse = new Position(gui.mouse_position);
+
+        try{
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        }catch(UnsupportedLookAndFeelException e){}
+         catch(ClassNotFoundException e){}
+         catch(InstantiationException e){}
+         catch(IllegalAccessException e){}
+              
         gui.go();
     }
 
@@ -45,7 +64,7 @@ public class CatMouseSimulationGUI{
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         //draw panel for animation
-        DrawPanel drawPanel = new DrawPanel();
+        drawPanel = new DrawPanel();
 
         JPanel buttonPanel = new JPanel();
         JButton resetButton = new JButton("reset");
@@ -54,7 +73,7 @@ public class CatMouseSimulationGUI{
         JButton quitButton = new JButton("quit");
         JLabel timeLabel = new JLabel("Time: ");
         currentTimeLabel = new JLabel(Integer.toString(time));
-        
+
         //Add buttons to panel
         buttonPanel.add(resetButton);
         buttonPanel.add(stepButton);
@@ -64,38 +83,75 @@ public class CatMouseSimulationGUI{
         buttonPanel.add(currentTimeLabel);
 
         //add listeners for each button
+        resetButton.addActionListener(new resetListener());
         quitButton.addActionListener(new quitListener());
-        stepButton.addActionListener(new stepListener());
+        stepButton.addActionListener(new StepListener());
+        runButton.addActionListener(new runListener());
 
         frame.getContentPane().add(BorderLayout.SOUTH, buttonPanel);
         frame.getContentPane().add(drawPanel);
         
         frame.setSize(400, 400);
         frame.setVisible(true); 
-        
-        /*
-        try{
-            Thread.sleep(10000);
-        }catch(Exception ex){}    
-        */
-        //currentTimeLabel.setText("2");
     }
     
     //Button classes
     class resetListener implements ActionListener{
         public void actionPerformed(ActionEvent event){
-            System.exit(0);
+            eaten = false;
+            cat_position = new Position(reset_cat);
+            mouse_position = new Position(reset_mouse);
+            cat.changePosition(cat_position);
+            mouse.changePosition(mouse_position);
+            catAngle = cat.getPosition().getAngle();
+            catRadius = (int)cat.getPosition().getRadius();
+            mouseAngle = mouse.getPosition().getAngle();
+
+            //redraw
+            drawPanel.repaint();
+
+            //restart time label
+            time = 0;
+            done = true;
+            currentTimeLabel.setText(Integer.toString(time));
         }
     }
-    class stepListener implements ActionListener{
+    class StepListener implements ActionListener{
         public void actionPerformed(ActionEvent event){
-            time++;
-            currentTimeLabel.setText(Integer.toString(time));
+            if(eaten){
+                String ret = time + " eaten " + mouse.getPosition().toString() + " " + cat.getPosition().toString();
+                JOptionPane.showMessageDialog(frame, ret);
+                done = false;
+            }    
+            else if(time > 30){
+                String ret = time + " escaped " + mouse.getPosition().toString() + " " + cat.getPosition().toString();
+                JOptionPane.showMessageDialog(frame, ret);
+                done = false;
+            }
+            else{    
+                eaten = cat.move(mouse.getPosition());
+                mouse.move();
+                mouseAngle = mouse.getPosition().getAngle();
+                catAngle = cat.getPosition().getAngle();
+                catRadius = (int)cat.getPosition().getRadius();
+                
+                //redraw the panel
+                drawPanel.repaint();
+                try{
+                    Thread.sleep((int)millisecondsPerTimeStep);
+                }catch(Exception ex) {}    
+
+                time++;
+                currentTimeLabel.setText(Integer.toString(time));
+            }
         }
     }
     class runListener implements ActionListener{
         public void actionPerformed(ActionEvent event){
-            System.exit(0);
+            StepListener stepListener = new StepListener();
+            while(time < 31 && done){
+                stepListener.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+            }
         }
     }
     class quitListener implements ActionListener{
@@ -106,6 +162,10 @@ public class CatMouseSimulationGUI{
     
     class DrawPanel extends JPanel{
         public void paintComponent(Graphics g){
+            //redrawing the panel
+            g.setColor(Color.white);
+            g.fillRect(0, 0, this.getWidth(), this.getHeight());
+
             //1 meter = 1 pixel
             int radius = pixelPerMeter;
             int diameter = radius * 2;

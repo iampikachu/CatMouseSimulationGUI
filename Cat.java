@@ -39,6 +39,9 @@ public class Cat {
         boolean check = Math.cos(angle_B - angle_A) > Math.cos(angle_C - angle_A) && Math.cos(angle_C - angle_B) > Math.cos(angle_C - angle_A);
         return myPosition.getRadius() == 1.0 && check;        
     }
+    public void changePosition(Position change){
+        myPosition = change;
+    }        
     
     private Position myPosition;
 }
